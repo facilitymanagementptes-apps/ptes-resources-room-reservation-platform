@@ -152,7 +152,7 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # ==========================================
 with st.sidebar:
     try:
-        logo = Image.open('ptes_logo.png')
+        logo = Image.open('ptes_logo.PNG')
         st.image(logo, use_container_width=True)
     except Exception:
         st.warning("Logo image 'ptes_logo.png' not found.")
