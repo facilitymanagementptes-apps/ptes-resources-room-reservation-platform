@@ -357,6 +357,7 @@ with tab1:
             if mic_qty > 0: eq_list.append(f"Microphone x{int(mic_qty)}")
             if mic_stand_qty > 0: eq_list.append(f"Mic stand x{int(mic_stand_qty)}")
             if audio_cable_qty > 0: eq_list.append(f"Audio cable x{int(audio_cable_qty)}")
+            if extra_hdmi_qty > 0: eq_list.append(f" HDMI adapter x{int(extra_hdmi_qty)}")
             if projector_qty > 0: eq_list.append(f"Projector x{int(projector_qty)}")
             if white_screen_qty > 0: eq_list.append(f"Portable white screen x{int(white_screen_qty)}")
             if visualiser_qty > 0: eq_list.append(f"Visualiser x{int(visualiser_qty)}")
