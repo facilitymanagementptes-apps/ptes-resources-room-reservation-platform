@@ -1,339 +1,610 @@
 import streamlit as st
+from PIL import Image
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
+import calendar
+import urllib.parse
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import urllib.parse
 
 # ==========================================
-# PAGE CONFIGURATION & STYLING
+# PAGE CONFIGURATION
 # ==========================================
-st.set_page_config(
-    page_title="PTES Resource Room Booking Portal",
-    page_icon="🏛️",
-    layout="wide"
-)
+st.set_page_config(page_title="PTES Resource Room Log", layout="wide")
 
-st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.2rem;
-        color: #1E3A8A;
-        font-weight: 700;
-        margin-bottom: 0px;
+# ==========================================
+# CUSTOM CSS STYLING & COLOR SCHEME
+# ==========================================
+custom_css = """
+<style>
+    /* GLOBAL APPLICATION VIEWPORT BACKGROUND */
+    .stApp, .stAppViewContainer, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {
+        background-color: #E5C2F5 !important;
     }
-    .sub-header {
-        font-size: 1.1rem;
-        color: #475569;
-        margin-bottom: 20px;
+
+    /* TOP HEADING SECTION */
+    .header-container {
+        background-color: #D4FA8F;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+        border: 5px solid #45DB24;
     }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+    .header-container h1 {
+        color: #111111 !important;
+        font-weight: 800;
+        margin-bottom: 5px;
     }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: #F1F5F9;
-        border-radius: 5px 5px 0px 0px;
+    .header-container p {
+        color: #222222 !important;
+        font-size: 1.2rem;
         font-weight: 600;
-        color: #334155;
+        margin: 0;
     }
-    .stTabs [aria-selected="true"] {
-        background-color: #1E3A8A !important;
-        color: white !important;
+
+    /* SIDEBAR */
+    [data-testid="stSidebar"] {
+        background-color: #FAE48F !important;
     }
-    </style>
+    [data-testid="stSidebar"] * {
+        color: #111111 !important;
+    }
+
+    /* INPUT FIELDS & TEXT CONTRAST ENHANCEMENTS */
+    input, select, textarea, div[data-baseweb="select"] {
+        background-color: #FFFFFF !important;
+        color: #111111 !important;
+        border-radius: 6px !important;
+    }
+    label, .stMarkdown, p, h1, h2, h3, h4, span {
+        color: #111111 !important;
+    }
+
+    /* TAB BANNERS */
+    .tab1-banner {
+        background-color: #FA9D8F;
+        padding: 16px 20px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #e58273;
+    }
+    .tab1-banner p {
+        color: #111111 !important;
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin: 0;
+    }
+
+    .tab2-banner {
+        background-color: #FACA8F;
+        padding: 16px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #eab374;
+    }
+    .tab2-banner h3 {
+        color: #111111 !important;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    /* FORM CONTAINER BACKGROUND */
+    div[data-testid="stForm"] {
+        background-color: #FDE7FE !important;
+        padding: 24px !important;
+        border-radius: 12px !important;
+        border: 1px solid #f0c3f2 !important;
+    }
+
+    /* FOOTER SECTION */
+    .footer-container {
+        background-color: #D4FA8F;
+        padding: 18px 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin-top: 30px;
+        border: 5px solid #45DB24;
+    }
+    .footer-container p {
+        margin: 4px 0 !important;
+        color: #111111 !important;
+    }
+
+    /* TAB NAVIGATION TITLES */
+    button[data-baseweb="tab"],
+    button[data-baseweb="tab"] p,
+    button[data-baseweb="tab"] div,
+    button[data-baseweb="tab"] span,
+    [data-testid="stTab"] p {
+        font-size: 13pt !important;
+        font-weight: 700 !important;
+    }
+
+    /* CALENDAR CONTAINER BACKGROUND */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #FABBFC !important;
+        border-radius: 12px !important;
+        border: 1px solid #FABBFC !important;
+        padding: 12px !important;
+    }
+
+    /* CALENDAR BUTTON CELL SIZING */
+    div[data-testid="stVerticalBlockBorderWrapper"] button {
+        min-height: 32px !important;
+        height: 32px !important;
+        padding: 2px 4px !important;
+        margin: 1px 0px !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] button p {
+        font-size: 11pt !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# ==========================================
+# SIDEBAR CONTENT
+# ==========================================
+with st.sidebar:
+    try:
+        logo = Image.open('ptes_logo.PNG')
+        st.image(logo, use_container_width=True)
+    except Exception:
+        st.warning("Logo image 'ptes_logo.png' not found.")
+
+    st.header("Admin Access")
+    admin_password = st.text_input("Enter Password to Delete", type="password")
+
+    st.divider()
+    st.info("""
+    **📜 Reservation Rules:**
+    1. Check the schedule before booking.
+    2. If an event lasts **more than 1 day**, please submit a separate booking for each day.
+    3. Confirmed bookings can only be removed by the Admin.
+    """)
+
+# ==========================================
+# HEADER SECTION
+# ==========================================
+st.markdown("""
+    <div class="header-container">
+        <h1>PUSAT TINGKATAN ENAM SENGKURONG</h1>
+        <p style="font-size: 20px; font-weight: bold;">✨ Digital Multi-Resource Reservation Room ✨</p>
+    </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# CONSTANTS & CONFIGURATIONS
+# DATABASE & CONFIGURATION SETUP
 # ==========================================
-DB_COLUMNS = [
-    "Role", "Name", "Department", "WhatsApp", 
-    "Event", "Room", "Date", "Time_Slot", 
-    "Equipment", "Equipment_Details"
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+ADMIN_WA_NUMBER = "6737228994"
+DB_COLUMNS = ["Role", "Name", "Department", "WhatsApp", "Event", "Room", "Date", "Time_Slot", "Equipment", "Equipment_Details"]
+
+# Venue List with Capacities
+room_list = [
+    "Multipurpose Hall (MPH) [Cap: 800]",
+    "Multimedia Theatre (MMT) [Cap: 288]",
+    "Lecture Theatre 1 (LT1) [Cap: 102]",
+    "Lecture Theatre 2 (LT2) [Cap: 102]",
+    "Conference Room [Cap: 30]"
 ]
 
-ROOMS = [
-    "Main Hall", 
-    "Conference Room", 
-    "Lecture Theatre 1", 
-    "Lecture Theatre 2", 
-    "Computer Lab"
+# Academic Department List (20 Subjects)
+department_list = [
+    "Accounting", "Art & Design", "Biology", "Business", "Chemistry",
+    "Computer Science", "Design & Technology", "Economics", "English", "Food Studies",
+    "Geography", "History", "Islamic Studies", "Malay Studies", "Mathematics",
+    "Media Studies", "Physics", "Psychology", "Sociology", "Travel & Tourism"
 ]
 
-TIME_SLOTS = [
-    "Morning (07:45 AM - 12:00 PM)",
-    "Afternoon (01:00 PM - 04:30 PM)",
-    "Full Day (07:45 AM - 04:30 PM)"
-]
+# Period-based Time Slots
+time_slots = {
+    "Period 1 (7:45 - 8:45 AM)": "Period 1",
+    "Period 2 (8:50 - 9:50 AM)": "Period 2",
+    "Breaktime (9:50 - 10:10 AM)": "Breaktime",
+    "Period 3 (10:10 - 11:10 AM)": "Period 3",
+    "Period 4 (11:15 AM - 12:15 PM)": "Period 4",
+    "Lunch time (12:15 - 1:30 PM)": "Lunch time",
+    "Period 5 (1:30 - 2:30 PM)": "Period 5",
+    "Afternoon (2:30 - 4:30 PM)": "Afternoon",
+    "Whole morning (8:00 AM - 12:00 PM)": "Whole morning",
+    "Whole day (8:00 AM - 4:00 PM)": "Whole day"
+}
 
-# ==========================================
-# HELPER FUNCTIONS: DATABASE
-# ==========================================
-def get_database_connection():
-    """Initializes and returns the Google Sheets connection."""
-    return st.connection("gsheets", type=GSheetsConnection)
-
-def load_bookings():
-    """Loads existing bookings from the Google Sheet safely."""
+def send_admin_email(booking_details):
+    """Sends an automated HTML email notification to the Admin upon new booking."""
     try:
-        conn = get_database_connection()
-        df = conn.read(ttl=0)
-        if df is None or df.empty:
-            return pd.DataFrame(columns=DB_COLUMNS)
-        # Ensure all required columns are present
-        for col in DB_COLUMNS:
-            if col not in df.columns:
-                df[col] = ""
-        return df[DB_COLUMNS]
-    except Exception as e:
-        st.error(f"Error loading database: {e}")
-        return pd.DataFrame(columns=DB_COLUMNS)
+        sender_email = st.secrets["SENDER_EMAIL"]
+        sender_password = st.secrets["SENDER_PASSWORD"]
+        receiver_email = st.secrets["ADMIN_RECEIVER_EMAIL"]
 
-def save_booking(new_row_data):
-    """Appends a new booking row to the Google Sheet database."""
-    try:
-        conn = get_database_connection()
-        df = load_bookings()
-        new_row_df = pd.DataFrame([new_row_data], columns=DB_COLUMNS)
-        updated_df = pd.concat([df, new_row_df], ignore_index=True)
-        conn.update(data=updated_df)
-        return True
-    except Exception as e:
-        st.error(f"Failed to save booking to database: {e}")
-        return False
-
-def delete_booking(row_index):
-    """Deletes a specific booking row by index."""
-    try:
-        conn = get_database_connection()
-        df = load_bookings()
-        updated_df = df.drop(index=row_index).reset_index(drop=True)
-        conn.update(data=updated_df)
-        return True
-    except Exception as e:
-        st.error(f"Failed to delete record: {e}")
-        return False
-
-# ==========================================
-# HELPER FUNCTIONS: NOTIFICATIONS
-# ==========================================
-def send_email_notification(admin_email, subject, body_html):
-    """Sends an email notification via Gmail SMTP."""
-    try:
-        sender_email = st.secrets.get("SENDER_EMAIL")
-        sender_password = st.secrets.get("SENDER_PASSWORD")
+        subject = f"🔔 New Booking Alert: {booking_details['Room']} ({booking_details['Date']})"
         
-        if not sender_email or not sender_password:
-            return False, "SMTP credentials are missing in Streamlit Secrets."
+        text_body = (
+            f"New Room Booking Notification\n\n"
+            f"Role: {booking_details['Role']}\n"
+            f"Name: {booking_details['Name']}\n"
+            f"Department: {booking_details['Department']}\n"
+            f"Facility / Room: {booking_details['Room']}\n"
+            f"Date: {booking_details['Date']}\n"
+            f"Time Slot: {booking_details['Time_Slot']}\n"
+            f"Event Purpose: {booking_details['Event']}\n"
+            f"Equipment Needed: {booking_details['Equipment_Details']}\n"
+            f"WhatsApp Contact: {booking_details['WhatsApp']}\n"
+        )
+
+        html_body = f"""
+        <html>
+            <body>
+                <h2>📌 New Room Booking Notification</h2>
+                <p style="font-size: 16px; font-weight: bold;">🔔 A new reservation is registered successfully:</p>
+                <ul>
+                    <li><b>Role:</b> {booking_details['Role']}</li>
+                    <li><b>Name:</b> {booking_details['Name']}</li>
+                    <li><b>Department:</b> {booking_details['Department']}</li>
+                    <li><b>Facility / Room:</b> {booking_details['Room']}</li>
+                    <li><b>Date:</b> {booking_details['Date']}</li>
+                    <li><b>Time Slot:</b> {booking_details['Time_Slot']}</li>
+                    <li><b>Event Purpose:</b> {booking_details['Event']}</li>
+                    <li><b>Equipment Requested:</b> {booking_details['Equipment_Details']}</li>
+                    <li><b>WhatsApp Contact:</b> {booking_details['WhatsApp']}</li>
+                </ul>
+                <hr>
+                <p><i>This is an automated notification from PTES Booking Portal.</i></p>
+            </body>
+        </html>
+        """
 
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
         msg["From"] = sender_email
-        msg["To"] = admin_email
+        msg["To"] = receiver_email
+        msg["Subject"] = subject
         
-        msg.attach(MIMEText(body_html, "html"))
-        
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, admin_email, msg.as_string())
-        return True, "Email sent successfully."
+        msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+
     except Exception as e:
-        return False, str(e)
+        st.warning(f"Booking saved, but background email alert failed: {e}")
+        return False
 
 # ==========================================
-# MAIN APPLICATION LAYOUT
+# TAB NAVIGATION
 # ==========================================
-st.markdown('<p class="main-header">PTES Resource Room Booking Portal</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Manage facility reservations, check availability, and request equipment seamlessly.</p>', unsafe_allow_html=True)
+tab1, tab2 = st.tabs(["📝 Make a Booking", "📅 View Schedule"])
 
-tab_book, tab_calendar, tab_admin = st.tabs(["📝 New Booking", "📅 Room Calendar & Availability", "⚙️ Admin Portal"])
+# ==========================================
+# TAB 1: MAKE A BOOKING
+# ==========================================
+with tab1:
+    st.markdown("""
+        <div class="tab1-banner">
+            <p>⚠️ <b>Reminder:</b> For multi-day events, please book each day individually.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-# ------------------------------------------
-# TAB 1: NEW BOOKING FORM
-# ------------------------------------------
-with tab_book:
-    st.subheader("Submit a New Room Reservation Request")
-    
-    with st.form("booking_form", clear_on_submit=False):
+    with st.form("booking_form"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            user_role = st.selectbox("Role", ["Lecturer", "External Organisation", "Admin"])
-            name = st.text_input("Full Name / PIC *")
-            dept = st.text_input("Department / Unit / Organization *")
-            wa_num = st.text_input("WhatsApp Number (with country code) *", placeholder="+6738123456")
-            
+            user_role = st.selectbox("Role / Category", ["Lecturer", "External Organisation", "Admin"])
+            name = st.text_input("Name")
+            dept = st.selectbox("Department / Organisation Unit", department_list)
+            wa_num = st.text_input("Active WhatsApp Number (e.g. +673...)")
+            notify_option = st.selectbox("Notify Admin via", ["Email Notification", "WhatsApp Link", "No Notification"])
+
         with col2:
-            event_name = st.text_input("Event Title / Purpose *")
-            room_choice = st.selectbox("Select Room", ROOMS)
-            booking_date = st.date_input("Booking Date *")
-            time_slot = st.selectbox("Time Slot", TIME_SLOTS)
+            event_name = st.text_input("Event Title / Purpose")
+            room_choice = st.selectbox("Select Room / Facility", room_list)
+            booking_date = st.date_input("Date of Booking", min_value=datetime.today(), format="DD/MM/YYYY")
+            slot_choice = st.selectbox("Time / Period Duration", list(time_slots.keys()))
 
         st.markdown("---")
-        st.subheader("🛠️ Equipment Request (Optional)")
-        st.write("Specify quantities for the items required for your event:")
+        st.subheader("🛠️ Equipment Needed")
         
         eq_col1, eq_col2, eq_col3 = st.columns(3)
-        with eq_col1:
-            q_mic = st.number_input("Microphone", min_value=0, max_value=10, value=0, step=1)
-            q_speaker = st.number_input("Portable Speaker", min_value=0, max_value=5, value=0, step=1)
-        with eq_col2:
-            q_projector = st.number_input("Projector", min_value=0, max_value=3, value=0, step=1)
-            q_laptop = st.number_input("Extension Cord", min_value=0, max_value=10, value=0, step=1)
+        
         with eq_col3:
-            q_table = st.number_input("Small Foldable Table", min_value=0, max_value=20, value=0, step=1)
-            q_chair = st.number_input("Extra Chairs", min_value=0, max_value=50, value=0, step=1)
+            req_speaker = st.checkbox("Portable speaker")
+            req_projector = st.checkbox("Projector")
+            req_white_screen = st.checkbox("Portable white screen")
+            req_visualiser = st.checkbox("Visualiser")
+            req_green_board = st.checkbox("Portable green board")
+            req_blue_board = st.checkbox("Portable blue board")
+            req_mic_stand = st.checkbox("Mic stand")
+            req_audio_cable = st.checkbox("Audio cable")
 
-        submitted = st.form_submit_button("Submit Reservation Request")
+        with eq_col2:
+            req_whiteboard = st.checkbox("Portable whiteboard")
+            whiteboard_qty = st.number_input("Whiteboard quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_whiteboard)
+            
+            req_flipchart = st.checkbox("Portable flip chart")
+            flipchart_qty = st.number_input("Flip chart quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_flipchart)
 
-        if submitted:
-            # Validation checks
-            if not name.strip() or not dept.strip() or not wa_num.strip() or not event_name.strip():
-                st.error("Please fill out all required personal and event detail fields.")
+            req_mic = st.checkbox("Microphone")
+            mic_qty = st.number_input("Microphone Quantity", min_value=1, max_value=10, value=1, step=1, disabled=not req_mic)
+            
+        with eq_col1:
+            req_small_table = st.checkbox("Small foldable table")
+            small_table_qty = st.number_input("Small foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_small_table)
+            
+            req_large_table = st.checkbox("Large foldable table")
+            large_table_qty = st.number_input("Large foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_large_table)
+            
+            req_round_table = st.checkbox("Round table")
+            round_table_qty = st.number_input("Round table quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_round_table)
+            
+        submit = st.form_submit_button("Confirm Booking")
+
+    if submit:
+        if name and event_name and wa_num:
+            try:
+                existing_data = conn.read(ttl=0)
+            except Exception:
+                st.error("⚠️ Failed to reach Google Sheets database. Please try again.")
+                st.stop()
+
+            formatted_date = booking_date.strftime("%d/%m/%Y")
+            clean_slot_db_value = time_slots[slot_choice]
+
+            # Compile equipment summary text
+            eq_list = []
+            if req_speaker: eq_list.append("Portable speaker")
+            if req_mic: eq_list.append(f"Microphone x{int(mic_qty)}")
+            if req_mic_stand: eq_list.append("Mic stand")
+            if req_audio_cable: eq_list.append("Audio cable")
+            if req_projector: eq_list.append("Projector")
+            if req_white_screen: eq_list.append("Portable white screen")
+            if req_visualiser: eq_list.append("Visualiser")
+            if req_green_board: eq_list.append("Portable green board")
+            if req_blue_board: eq_list.append("Portable blue board")
+            if req_small_table: eq_list.append(f"Small foldable table x{int(small_table_qty)}")
+            if req_large_table: eq_list.append(f"Large foldable table x{int(large_table_qty)}")
+            if req_round_table: eq_list.append(f"Round table x{int(round_table_qty)}")
+            if req_whiteboard: eq_list.append(f"Portable whiteboard x{int(whiteboard_qty)}")
+            if req_flipchart: eq_list.append(f"Portable flip chart x{int(flipchart_qty)}")
+
+            equipment_summary = ", ".join(eq_list) if eq_list else "None"
+            has_equipment = "Yes" if eq_list else "No"
+
+            if existing_data.empty:
+                existing_data = pd.DataFrame(columns=DB_COLUMNS)
             else:
-                formatted_date_str = booking_date.strftime("%d/%m/%Y")
+                existing_data = existing_data.reindex(columns=DB_COLUMNS)
+
+            same_day_room = existing_data[
+                (existing_data['Date'].astype(str) == formatted_date) &
+                (existing_data['Room'] == room_choice)
+            ]
+
+            clash = same_day_room[
+                (same_day_room['Time_Slot'] == clean_slot_db_value) |
+                (same_day_room['Time_Slot'] == "Whole day") |
+                (clean_slot_db_value == "Whole day")
+            ]
+
+            if not clash.empty:
+                st.error(f"❌ CLASH DETECTED: {room_choice} is unavailable on {formatted_date} due to a conflicting reservation.")
+            else:
+                new_entry = pd.DataFrame([{
+                    "Role": user_role,
+                    "Name": name,
+                    "Department": dept,
+                    "WhatsApp": wa_num,
+                    "Event": event_name,
+                    "Room": room_choice,
+                    "Date": formatted_date, 
+                    "Time_Slot": clean_slot_db_value,
+                    "Equipment": has_equipment,
+                    "Equipment_Details": equipment_summary
+                }])[DB_COLUMNS]
+
+                updated_df = pd.concat([existing_data, new_entry], ignore_index=True)
+                conn.update(data=updated_df)
+                st.cache_data.clear()
                 
-                # Clash Detection
-                df_existing = load_bookings()
-                clash_found = False
-                if not df_existing.empty:
-                    match_mask = (
-                        (df_existing["Room"] == room_choice) & 
-                        (df_existing["Date"] == formatted_date_str) & 
-                        (df_existing["Time_Slot"] == time_slot)
+                details_payload = {
+                    "Role": user_role,
+                    "Name": name,
+                    "Department": dept,
+                    "WhatsApp": wa_num,
+                    "Event": event_name,
+                    "Room": room_choice,
+                    "Date": formatted_date,
+                    "Time_Slot": clean_slot_db_value,
+                    "Equipment_Details": equipment_summary
+                }
+
+                st.balloons()
+                st.success(f"✅ Success! {room_choice} has been reserved for {event_name}.")
+
+                email_sent = False
+
+                if notify_option == "Email Notification":
+                    with st.spinner("Notifying Admin via automated email..."):
+                        email_sent = send_admin_email(details_payload)
+                    if email_sent:
+                        st.info("✉️ Admin notified via automated email.")
+
+                elif notify_option == "WhatsApp Link":
+                    message_body = (
+                        f"📌 *NEW ROOM BOOKING NOTIFICATION*\n\n"
+                        f"👤 *Role:* {user_role}\n"
+                        f"👤 *Name:* {name}\n"
+                        f"🏢 *Dept:* {dept}\n"
+                        f"🏛️ *Room:* {room_choice}\n"
+                        f"📅 *Date:* {formatted_date}\n"
+                        f"⏰ *Time Slot:* {clean_slot_db_value}\n"
+                        f"📝 *Event:* {event_name}\n"
+                        f"🛠️ *Equipment:* {equipment_summary}\n"
+                        f"📞 *Contact:* {wa_num}"
                     )
-                    if match_mask.any():
-                        clash_found = True
+                    encoded_msg = urllib.parse.quote(message_body)
+                    wa_url = f"https://wa.me/{ADMIN_WA_NUMBER}?text={encoded_msg}"
+                    
+                    st.link_button("📲 Click Here to Send WhatsApp Notification to Admin", wa_url)
 
-                if clash_found:
-                    st.error(f"❌ Clash Detected! The **{room_choice}** is already booked for **{time_slot}** on **{formatted_date_str}**.")
                 else:
-                    # Compile equipment summary
-                    selected_equipment = []
-                    if q_mic > 0: selected_equipment.append(f"Microphone x{q_mic}")
-                    if q_speaker > 0: selected_equipment.append(f"Portable Speaker x{q_speaker}")
-                    if q_projector > 0: selected_equipment.append(f"Projector x{q_projector}")
-                    if q_laptop > 0: selected_equipment.append(f"Extension Cord x{q_laptop}")
-                    if q_table > 0: selected_equipment.append(f"Small Foldable Table x{q_table}")
-                    if q_chair > 0: selected_equipment.append(f"Extra Chairs x{q_chair}")
+                    st.caption("No notification requested.")
 
-                    has_equipment = "Yes" if selected_equipment else "No"
-                    equipment_details_str = ", ".join(selected_equipment) if selected_equipment else "None"
-
-                    new_row = [
-                        user_role, name, dept, wa_num, 
-                        event_name, room_choice, formatted_date_str, 
-                        time_slot, has_equipment, equipment_details_str
-                    ]
-
-                    # Save to database
-                    if save_booking(new_row):
-                        st.success("🎉 Booking successfully registered and saved to the database!")
-                        
-                        # Send Email to Admin
-                        admin_email = st.secrets.get("ADMIN_RECEIVER_EMAIL", "admin@ptes.edu.bn")
-                        email_subject = f"[PTES Booking] New Reservation: {room_choice} ({formatted_date_str})"
-                        email_body = f"""
-                        <h2>New Room Booking Notification</h2>
-                        <p><b>Role:</b> {user_role}</p>
-                        <p><b>Name:</b> {name}</p>
-                        <p><b>Department:</b> {dept}</p>
-                        <p><b>WhatsApp:</b> {wa_num}</p>
-                        <p><b>Event:</b> {event_name}</p>
-                        <p><b>Room:</b> {room_choice}</p>
-                        <p><b>Date:</b> {formatted_date_str}</p>
-                        <p><b>Time Slot:</b> {time_slot}</p>
-                        <p><b>Equipment Required:</b> {equipment_details_str}</p>
-                        """
-                        email_sent, email_msg = send_email_notification(admin_email, email_subject, email_body)
-                        
-                        # Generate WhatsApp Direct Link payload
-                        wa_message = (
-                            f"📌 *NEW ROOM BOOKING*\n\n"
-                            f"👤 *Name:* {name} ({user_role})\n"
-                            f"🏢 *Dept:* {dept}\n"
-                            f"🏛️ *Room:* {room_choice}\n"
-                            f"📅 *Date:* {formatted_date_str}\n"
-                            f"⏰ *Slot:* {time_slot}\n"
-                            f"📝 *Event:* {event_name}\n"
-                            f"🛠️ *Equipment:* {equipment_details_str}\n"
-                            f"📞 *Contact:* {wa_num}"
-                        )
-                        encoded_wa_msg = urllib.parse.quote(wa_message)
-                        whatsapp_link = f"https://wa.me/?text={encoded_wa_msg}"
-
-                        st.markdown(f"""
-                            <div style="background-color: #F8FAFC; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0; margin-top: 15px;">
-                                <p><b>Notification Status:</b> {'Email sent to admin successfully.' if email_sent else f'Email warning: {email_msg}'}</p>
-                                <a href="{whatsapp_link}" target="_blank" style="display: inline-block; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">📱 Send Details via WhatsApp</a>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-# ------------------------------------------
-# TAB 2: ROOM CALENDAR & AVAILABILITY
-# ------------------------------------------
-with tab_calendar:
-    st.subheader("Current Facility Booking Schedule")
-    st.write("Review existing reservations before making a new booking request.")
-    
-    df_calendar = load_bookings()
-    if df_calendar.empty:
-        st.info("No bookings registered in the database yet.")
-    else:
-        # Filter view options
-        f_col1, f_col2 = st.columns(2)
-        with f_col1:
-            selected_room_filter = st.selectbox("Filter by Room", ["All Rooms"] + ROOMS)
-        
-        display_df = df_calendar.copy()
-        if selected_room_filter != "All Rooms":
-            display_df = display_df[display_df["Room"] == selected_room_filter]
-            
-        st.dataframe(display_df[["Name", "Department", "Event", "Room", "Date", "Time_Slot", "Equipment_Details"]], use_container_width=True)
-
-# ------------------------------------------
-# TAB 3: ADMIN PORTAL
-# ------------------------------------------
-with tab_admin:
-    st.subheader("Administrator Management Portal")
-    
-    admin_pass_input = st.text_input("Enter Admin Password", type="password")
-    system_admin_pass = st.secrets.get("admin_password", "admin123")
-    
-    if admin_pass_input == system_admin_pass:
-        st.success("🔓 Admin Authentication Successful")
-        
-        df_admin = load_bookings()
-        if df_admin.empty:
-            st.info("The database is currently empty.")
         else:
-            st.write(f"Total Bookings Found: **{len(df_admin)}**")
+            st.error("Please fill in all required fields.")
+
+# ==========================================
+# TAB 2: VIEW SCHEDULE
+# ==========================================
+with tab2:
+    st.markdown("""
+        <div class="tab2-banner">
+            <h3>📅 Monthly Interactive Schedule Calendar</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    col_ref, col_room_filter = st.columns([1, 2])
+    
+    with col_ref:
+        st.write("")
+        st.write("")
+        if st.button("🔄 Refresh Data", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+
+    with col_room_filter:
+        room_filter_options = ["All Rooms"] + room_list
+        selected_room_filter = st.selectbox("Select Room / Venue to Inspect", room_filter_options)
+
+    try:
+        master_data = conn.read(ttl=60)
+    except Exception:
+        st.error("⚠️ Unable to connect to Google Sheets API.")
+        st.warning("Please check your database permissions or refresh.")
+        st.stop()
+
+    with st.container(border=True):
+        col_m, col_y = st.columns(2)
+        with col_m:
+            month_names = list(calendar.month_name)[1:]
+            selected_month_str = st.selectbox("Select Month", month_names, index=datetime.today().month - 1)
+            selected_month = month_names.index(selected_month_str) + 1
+        with col_y:
+            selected_year = st.number_input("Select Year", min_value=2024, max_value=2030, value=datetime.today().year)
+
+        if 'selected_calendar_day' not in st.session_state:
+            st.session_state.selected_calendar_day = datetime.today().day
+
+        if master_data is not None and not master_data.empty:
+            display_df = master_data.reindex(columns=DB_COLUMNS).copy()
+            display_df['datetime_obj'] = pd.to_datetime(display_df['Date'], format='%d/%m/%Y', errors='coerce')
+
+            month_data = display_df[
+                (display_df['datetime_obj'].dt.month == selected_month) &
+                (display_df['datetime_obj'].dt.year == selected_year)
+            ]
+
+            if selected_room_filter != "All Rooms":
+                calendar_view_df = month_data[month_data['Room'] == selected_room_filter]
+            else:
+                calendar_view_df = month_data
+
+            cal = calendar.Calendar(firstweekday=0)
+            month_days = cal.monthdayscalendar(selected_year, selected_month)
+
+            days_header = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            cols = st.columns(7)
+            for i, h in enumerate(days_header):
+                cols[i].markdown(f"<div style='text-align: center; font-size: 13pt; font-weight: bold; color: #67178C; margin-bottom: 5px;'>{h}</div>", unsafe_allow_html=True)
+
+            st.divider()
+
+            for week in month_days:
+                grid_cols = st.columns(7)
+                for i, day in enumerate(week):
+                    with grid_cols[i]:
+                        if day != 0:
+                            day_str = f"{day:02d}/{selected_month:02d}/{selected_year}"
+                            day_bookings = calendar_view_df[calendar_view_df['Date'] == day_str]
+                            booking_count = len(day_bookings)
+
+                            label = f"🔴 {day:02d} ({booking_count})" if booking_count > 0 else f"⚪ {day:02d}"
+
+                            if st.button(label, key=f"btn_day_{day}_{selected_month}_{selected_year}", use_container_width=True):
+                                st.session_state.selected_calendar_day = day
+
+    if master_data is not None and not master_data.empty:
+        st.divider()
+
+        active_day = st.session_state.selected_calendar_day
+        max_days = calendar.monthrange(selected_year, selected_month)[1]
+        if active_day > max_days:
+            active_day = max_days
+
+        inspected_date_str = f"{active_day:02d}/{selected_month:02d}/{selected_year}"
+
+        if selected_room_filter == "All Rooms":
+            st.write(f"### 🔍 All Reservations for **{inspected_date_str}**")
+        else:
+            st.write(f"### 🔍 Reservations for **{selected_room_filter}** on **{inspected_date_str}**")
+
+        details_df = month_data[month_data['Date'] == inspected_date_str]
+        if selected_room_filter != "All Rooms":
+            details_df = details_df[details_df['Room'] == selected_room_filter]
+
+        if not details_df.empty:
+            st.success(f"Found {len(details_df)} booking(s) matching your view:")
+            clean_details = details_df[['Role', 'Name', 'Department', 'Room', 'Time_Slot', 'Event', 'Equipment_Details', 'WhatsApp']]
+            st.dataframe(clean_details, hide_index=True, use_container_width=True)
+        else:
+            if selected_room_filter == "All Rooms":
+                st.info(f"No bookings registered for {inspected_date_str}.")
+            else:
+                st.info(f"No bookings registered for **{selected_room_filter}** on {inspected_date_str}.")
+
+        try:
+            target_password = st.secrets["admin_password"]
+        except KeyError:
+            target_password = None
+
+        if target_password and admin_password == target_password:
+            st.divider()
+            st.write("### 🔑 Admin: Cancel a Booking")
             
-            # Record deletion UI
-            st.markdown("### Manage / Delete Bookings")
-            delete_indices = st.multiselect("Select Row Index to Delete", options=df_admin.index.tolist())
+            booking_options = []
+            for master_idx, row in master_data.iterrows():
+                desc = f"{row['Name']} ({row['Role']}) — {row['Room']} on {row['Date']} ({row['Time_Slot']})"
+                booking_options.append((desc, master_idx))
             
-            if st.button("Delete Selected Records", type="primary"):
-                if delete_indices:
-                    try:
-                        conn = get_database_connection()
-                        updated_df = df_admin.drop(index=delete_indices).reset_index(drop=True)
-                        conn.update(data=updated_df)
-                        st.success("Selected records deleted successfully. Refreshing view...")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error removing records: {e}")
-                else:
-                    st.warning("Please select at least one row index to delete.")
-            
-            st.markdown("---")
-            st.markdown("### Complete Database Raw View")
-            st.dataframe(df_admin, use_container_width=True)
-    elif admin_pass_input:
-        st.error("Incorrect admin password.")
+            if booking_options:
+                option_labels = [opt[0] for opt in booking_options]
+                selected_label = st.selectbox("Select a Booking to Cancel", options=option_labels)
+                selected_master_index = [opt[1] for opt in booking_options if opt[0] == selected_label][0]
+                
+                if st.button("Delete Selected Booking", type="primary"):
+                    updated_master_df = master_data.drop(selected_master_index).reindex(columns=DB_COLUMNS)
+                    conn.update(data=updated_master_df)
+                    st.cache_data.clear()
+                    st.success("Booking deleted successfully.")
+                    st.rerun()
     else:
-        st.info("Please enter the admin password to access record management tools.")
+        st.info("No bookings found in database.")
+
+# ==========================================
+# FOOTER
+# ==========================================
+st.markdown("""
+    <div class="footer-container">
+        <p style="font-size: 18px; font-weight: bold;">✨ PTES Multi Resource Rooms Booking Portal ✨</p>
+        <p style="font-size: 14px; font-weight: 600;">Portal Developer : Miss Hajah Nurul Haziqah HN, IT Service Section PTES.</p>
+    </div>
+""", unsafe_allow_html=True)
