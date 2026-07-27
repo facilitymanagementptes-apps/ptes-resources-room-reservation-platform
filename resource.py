@@ -328,23 +328,23 @@ with tab1:
 
         with eq_col2:
             req_whiteboard = st.checkbox("Portable whiteboard")
-            whiteboard_qty = st.selectbox("Whiteboard quantity", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], disabled=not req_whiteboard)
+            whiteboard_qty = st.number_input("Whiteboard quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_whiteboard)
             
             req_flipchart = st.checkbox("Portable flip chart")
-            flipchart_qty = st.selectbox("Flip chart quantity", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], disabled=not req_flipchart)
+            flipchart_qty = st.number_input("Flip chart quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_flipchart)
 
             req_mic = st.checkbox("Microphone")
-            mic_qty = st.selectbox("Microphone Quantity", [1, 2], disabled=not req_mic)
+            mic_qty = st.number_input("Microphone Quantity", min_value=1, max_value=10, value=1, step=1, disabled=not req_mic)
             
         with eq_col1:
             req_small_table = st.checkbox("Small foldable table")
-            small_table_qty = st.selectbox("Small foldable quantity", [1, 2, 3, 4, 5, 6, 7, 8], disabled=not req_small_table)
+            small_table_qty = st.number_input("Small foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_small_table)
             
             req_large_table = st.checkbox("Large foldable table")
-            large_table_qty = st.selectbox("Large foldable quantity", [1, 2, 3, 4, 5, 6], disabled=not req_large_table)
+            large_table_qty = st.number_input("Large foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_large_table)
             
             req_round_table = st.checkbox("Round table")
-            round_table_qty = st.selectbox("Round table quantity", [1, 2, 3], disabled=not req_round_table)
+            round_table_qty = st.number_input("Round table quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_round_table)
             
         submit = st.form_submit_button("Confirm Booking")
 
@@ -362,7 +362,7 @@ with tab1:
             # Compile equipment summary text
             eq_list = []
             if req_speaker: eq_list.append("Portable speaker")
-            if req_mic: eq_list.append(f"Microphone x{mic_qty}")
+            if req_mic: eq_list.append(f"Microphone x{int(mic_qty)}")
             if req_mic_stand: eq_list.append("Mic stand")
             if req_audio_cable: eq_list.append("Audio cable")
             if req_projector: eq_list.append("Projector")
@@ -370,11 +370,11 @@ with tab1:
             if req_visualiser: eq_list.append("Visualiser")
             if req_green_board: eq_list.append("Portable green board")
             if req_blue_board: eq_list.append("Portable blue board")
-            if req_small_table: eq_list.append(f"Small foldable table x{small_table_qty}")
-            if req_large_table: eq_list.append(f"Large foldable table x{large_table_qty}")
-            if req_round_table: eq_list.append(f"Round table x{round_table_qty}")
-            if req_whiteboard: eq_list.append(f"Portable whiteboard x{whiteboard_qty}")
-            if req_flipchart: eq_list.append(f"Portable flip chart x{flipchart_qty}")
+            if req_small_table: eq_list.append(f"Small foldable table x{int(small_table_qty)}")
+            if req_large_table: eq_list.append(f"Large foldable table x{int(large_table_qty)}")
+            if req_round_table: eq_list.append(f"Round table x{int(round_table_qty)}")
+            if req_whiteboard: eq_list.append(f"Portable whiteboard x{int(whiteboard_qty)}")
+            if req_flipchart: eq_list.append(f"Portable flip chart x{int(flipchart_qty)}")
 
             equipment_summary = ", ".join(eq_list) if eq_list else "None"
             has_equipment = "Yes" if eq_list else "No"
