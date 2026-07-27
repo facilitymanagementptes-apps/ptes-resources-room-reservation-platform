@@ -312,39 +312,29 @@ with tab1:
             slot_choice = st.selectbox("Time / Period Duration", list(time_slots.keys()))
 
         st.markdown("---")
-        st.subheader("🛠️ Equipment Needed")
+        st.subheader("🛠️ Equipment Needed (Set quantities to 0 if not needed)")
         
         eq_col1, eq_col2, eq_col3 = st.columns(3)
         
         with eq_col3:
-            req_speaker = st.checkbox("Portable speaker")
-            req_projector = st.checkbox("Projector")
-            req_white_screen = st.checkbox("Portable white screen")
-            req_visualiser = st.checkbox("Visualiser")
-            req_green_board = st.checkbox("Portable green board")
-            req_blue_board = st.checkbox("Portable blue board")
-            req_mic_stand = st.checkbox("Mic stand")
-            req_audio_cable = st.checkbox("Audio cable")
+            speaker_qty = st.number_input("Portable speaker quantity", min_value=0, max_value=10, value=0, step=1)
+            projector_qty = st.number_input("Projector quantity", min_value=0, max_value=5, value=0, step=1)
+            white_screen_qty = st.number_input("Portable white screen quantity", min_value=0, max_value=5, value=0, step=1)
+            visualiser_qty = st.number_input("Visualiser quantity", min_value=0, max_value=5, value=0, step=1)
+            green_board_qty = st.number_input("Portable green board quantity", min_value=0, max_value=10, value=0, step=1)
+            blue_board_qty = st.number_input("Portable blue board quantity", min_value=0, max_value=10, value=0, step=1)
+            mic_stand_qty = st.number_input("Mic stand quantity", min_value=0, max_value=20, value=0, step=1)
+            audio_cable_qty = st.number_input("Audio cable quantity", min_value=0, max_value=20, value=0, step=1)
 
         with eq_col2:
-            req_whiteboard = st.checkbox("Portable whiteboard")
-            whiteboard_qty = st.number_input("Whiteboard quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_whiteboard)
-            
-            req_flipchart = st.checkbox("Portable flip chart")
-            flipchart_qty = st.number_input("Flip chart quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_flipchart)
-
-            req_mic = st.checkbox("Microphone")
-            mic_qty = st.number_input("Microphone Quantity", min_value=1, max_value=10, value=1, step=1, disabled=not req_mic)
+            whiteboard_qty = st.number_input("Portable whiteboard quantity", min_value=0, max_value=20, value=0, step=1)
+            flipchart_qty = st.number_input("Portable flip chart quantity", min_value=0, max_value=20, value=0, step=1)
+            mic_qty = st.number_input("Microphone quantity", min_value=0, max_value=10, value=0, step=1)
             
         with eq_col1:
-            req_small_table = st.checkbox("Small foldable table")
-            small_table_qty = st.number_input("Small foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_small_table)
-            
-            req_large_table = st.checkbox("Large foldable table")
-            large_table_qty = st.number_input("Large foldable quantity", min_value=1, max_value=50, value=1, step=1, disabled=not req_large_table)
-            
-            req_round_table = st.checkbox("Round table")
-            round_table_qty = st.number_input("Round table quantity", min_value=1, max_value=20, value=1, step=1, disabled=not req_round_table)
+            small_table_qty = st.number_input("Small foldable table quantity", min_value=0, max_value=50, value=0, step=1)
+            large_table_qty = st.number_input("Large foldable table quantity", min_value=0, max_value=50, value=0, step=1)
+            round_table_qty = st.number_input("Round table quantity", min_value=0, max_value=20, value=0, step=1)
             
         submit = st.form_submit_button("Confirm Booking")
 
@@ -359,22 +349,22 @@ with tab1:
             formatted_date = booking_date.strftime("%d/%m/%Y")
             clean_slot_db_value = time_slots[slot_choice]
 
-            # Compile equipment summary text
+            # Compile equipment summary text dynamically based on quantity > 0
             eq_list = []
-            if req_speaker: eq_list.append("Portable speaker")
-            if req_mic: eq_list.append(f"Microphone x{int(mic_qty)}")
-            if req_mic_stand: eq_list.append("Mic stand")
-            if req_audio_cable: eq_list.append("Audio cable")
-            if req_projector: eq_list.append("Projector")
-            if req_white_screen: eq_list.append("Portable white screen")
-            if req_visualiser: eq_list.append("Visualiser")
-            if req_green_board: eq_list.append("Portable green board")
-            if req_blue_board: eq_list.append("Portable blue board")
-            if req_small_table: eq_list.append(f"Small foldable table x{int(small_table_qty)}")
-            if req_large_table: eq_list.append(f"Large foldable table x{int(large_table_qty)}")
-            if req_round_table: eq_list.append(f"Round table x{int(round_table_qty)}")
-            if req_whiteboard: eq_list.append(f"Portable whiteboard x{int(whiteboard_qty)}")
-            if req_flipchart: eq_list.append(f"Portable flip chart x{int(flipchart_qty)}")
+            if speaker_qty > 0: eq_list.append(f"Portable speaker x{int(speaker_qty)}")
+            if mic_qty > 0: eq_list.append(f"Microphone x{int(mic_qty)}")
+            if mic_stand_qty > 0: eq_list.append(f"Mic stand x{int(mic_stand_qty)}")
+            if audio_cable_qty > 0: eq_list.append(f"Audio cable x{int(audio_cable_qty)}")
+            if projector_qty > 0: eq_list.append(f"Projector x{int(projector_qty)}")
+            if white_screen_qty > 0: eq_list.append(f"Portable white screen x{int(white_screen_qty)}")
+            if visualiser_qty > 0: eq_list.append(f"Visualiser x{int(visualiser_qty)}")
+            if green_board_qty > 0: eq_list.append(f"Portable green board x{int(green_board_qty)}")
+            if blue_board_qty > 0: eq_list.append(f"Portable blue board x{int(blue_board_qty)}")
+            if small_table_qty > 0: eq_list.append(f"Small foldable table x{int(small_table_qty)}")
+            if large_table_qty > 0: eq_list.append(f"Large foldable table x{int(large_table_qty)}")
+            if round_table_qty > 0: eq_list.append(f"Round table x{int(round_table_qty)}")
+            if whiteboard_qty > 0: eq_list.append(f"Portable whiteboard x{int(whiteboard_qty)}")
+            if flipchart_qty > 0: eq_list.append(f"Portable flip chart x{int(flipchart_qty)}")
 
             equipment_summary = ", ".join(eq_list) if eq_list else "None"
             has_equipment = "Yes" if eq_list else "No"
