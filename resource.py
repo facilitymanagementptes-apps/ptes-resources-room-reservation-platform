@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image
-from st_gsheets_connection import GSheetsConnection
+from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 import calendar
@@ -19,9 +19,12 @@ st.set_page_config(page_title="PTES Resource Room Log", layout="wide")
 # ==========================================
 custom_css = """
 <style>
+    /* GLOBAL APPLICATION VIEWPORT BACKGROUND */
     .stApp, .stAppViewContainer, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"] {
         background-color: #E5C2F5 !important;
     }
+
+    /* TOP HEADING SECTION */
     .header-container {
         background-color: #D4FA8F;
         padding: 20px;
@@ -41,12 +44,16 @@ custom_css = """
         font-weight: 600;
         margin: 0;
     }
+
+    /* SIDEBAR */
     [data-testid="stSidebar"] {
         background-color: #FAE48F !important;
     }
     [data-testid="stSidebar"] * {
         color: #111111 !important;
     }
+
+    /* INPUT FIELDS & TEXT CONTRAST ENHANCEMENTS */
     input, select, textarea, div[data-baseweb="select"] {
         background-color: #FFFFFF !important;
         color: #111111 !important;
@@ -55,6 +62,8 @@ custom_css = """
     label, .stMarkdown, p, h1, h2, h3, h4, span {
         color: #111111 !important;
     }
+
+    /* TAB BANNERS */
     .tab1-banner {
         background-color: #FA9D8F;
         padding: 16px 20px;
@@ -68,6 +77,7 @@ custom_css = """
         font-size: 1.05rem;
         margin: 0;
     }
+
     .tab2-banner {
         background-color: #FACA8F;
         padding: 16px 20px;
@@ -80,12 +90,16 @@ custom_css = """
         margin: 0;
         font-weight: 700;
     }
+
+    /* FORM CONTAINER BACKGROUND */
     div[data-testid="stForm"] {
         background-color: #FDE7FE !important;
         padding: 24px !important;
         border-radius: 12px !important;
         border: 1px solid #f0c3f2 !important;
     }
+
+    /* FOOTER SECTION */
     .footer-container {
         background-color: #D4FA8F;
         padding: 18px 20px;
@@ -98,6 +112,8 @@ custom_css = """
         margin: 4px 0 !important;
         color: #111111 !important;
     }
+
+    /* TAB NAVIGATION TITLES */
     button[data-baseweb="tab"],
     button[data-baseweb="tab"] p,
     button[data-baseweb="tab"] div,
@@ -106,12 +122,16 @@ custom_css = """
         font-size: 13pt !important;
         font-weight: 700 !important;
     }
+
+    /* CALENDAR CONTAINER BACKGROUND */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: #FABBFC !important;
         border-radius: 12px !important;
         border: 1px solid #FABBFC !important;
         padding: 12px !important;
     }
+
+    /* CALENDAR BUTTON CELL SIZING */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
         min-height: 32px !important;
         height: 32px !important;
@@ -132,10 +152,10 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # ==========================================
 with st.sidebar:
     try:
-        logo = Image.open('ptes_logo.PNG')
+        logo = Image.open('ptes_logo.png')
         st.image(logo, use_container_width=True)
     except Exception:
-        st.warning("Logo image 'ptes_logo.PNG' not found.")
+        st.warning("Logo image 'ptes_logo.png' not found.")
 
     st.header("Admin Access")
     admin_password = st.text_input("Enter Password to Delete", type="password")
@@ -166,6 +186,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 ADMIN_WA_NUMBER = "6737228994"
 DB_COLUMNS = ["Role", "Name", "Department", "WhatsApp", "Event", "Room", "Date", "Time_Slot", "Equipment", "Equipment_Details"]
 
+# Venue List with Capacities
 room_list = [
     "Multipurpose Hall (MPH) [Cap: 800]",
     "Multimedia Theatre (MMT) [Cap: 288]",
@@ -174,6 +195,7 @@ room_list = [
     "Conference Room [Cap: 30]"
 ]
 
+# Academic Department List (20 Subjects)
 department_list = [
     "Accounting", "Art & Design", "Biology", "Business", "Chemistry",
     "Computer Science", "Design & Technology", "Economics", "English", "Food Studies",
@@ -181,6 +203,7 @@ department_list = [
     "Media Studies", "Physics", "Psychology", "Sociology", "Travel & Tourism"
 ]
 
+# Period-based Time Slots
 time_slots = {
     "Period 1 (7:45 - 8:45 AM)": "Period 1",
     "Period 2 (8:50 - 9:50 AM)": "Period 2",
@@ -195,6 +218,7 @@ time_slots = {
 }
 
 def send_admin_email(booking_details):
+    """Sends an automated HTML email notification to the Admin upon new booking."""
     try:
         sender_email = st.secrets["SENDER_EMAIL"]
         sender_password = st.secrets["SENDER_PASSWORD"]
@@ -215,11 +239,35 @@ def send_admin_email(booking_details):
             f"WhatsApp Contact: {booking_details['WhatsApp']}\n"
         )
 
+        html_body = f"""
+        <html>
+            <body>
+                <h2>📌 New Room Booking Notification</h2>
+                <p style="font-size: 16px; font-weight: bold;">🔔 A new reservation is registered successfully:</p>
+                <ul>
+                    <li><b>Role:</b> {booking_details['Role']}</li>
+                    <li><b>Name:</b> {booking_details['Name']}</li>
+                    <li><b>Department:</b> {booking_details['Department']}</li>
+                    <li><b>Facility / Room:</b> {booking_details['Room']}</li>
+                    <li><b>Date:</b> {booking_details['Date']}</li>
+                    <li><b>Time Slot:</b> {booking_details['Time_Slot']}</li>
+                    <li><b>Event Purpose:</b> {booking_details['Event']}</li>
+                    <li><b>Equipment Requested:</b> {booking_details['Equipment_Details']}</li>
+                    <li><b>WhatsApp Contact:</b> {booking_details['WhatsApp']}</li>
+                </ul>
+                <hr>
+                <p><i>This is an automated notification from PTES Booking Portal.</i></p>
+            </body>
+        </html>
+        """
+
         msg = MIMEMultipart("alternative")
         msg["From"] = sender_email
         msg["To"] = receiver_email
         msg["Subject"] = subject
+        
         msg.attach(MIMEText(text_body, "plain"))
+        msg.attach(MIMEText(html_body, "html"))
 
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
@@ -227,7 +275,9 @@ def send_admin_email(booking_details):
         server.send_message(msg)
         server.quit()
         return True
+
     except Exception as e:
+        st.warning(f"Booking saved, but background email alert failed: {e}")
         return False
 
 # ==========================================
@@ -235,6 +285,9 @@ def send_admin_email(booking_details):
 # ==========================================
 tab1, tab2 = st.tabs(["📝 Make a Booking", "📅 View Schedule"])
 
+# ==========================================
+# TAB 1: MAKE A BOOKING
+# ==========================================
 with tab1:
     st.markdown("""
         <div class="tab1-banner">
@@ -299,12 +352,14 @@ with tab1:
         if name and event_name and wa_num:
             try:
                 existing_data = conn.read(ttl=0)
-            except Exception as e:
-                existing_data = pd.DataFrame(columns=DB_COLUMNS)
+            except Exception:
+                st.error("⚠️ Failed to reach Google Sheets database. Please try again.")
+                st.stop()
 
             formatted_date = booking_date.strftime("%d/%m/%Y")
             clean_slot_db_value = time_slots[slot_choice]
 
+            # Compile equipment summary text
             eq_list = []
             if req_speaker: eq_list.append("Portable speaker")
             if req_mic: eq_list.append(f"Microphone x{mic_qty}")
@@ -357,31 +412,52 @@ with tab1:
                 }])[DB_COLUMNS]
 
                 updated_df = pd.concat([existing_data, new_entry], ignore_index=True)
+                conn.update(data=updated_df)
+                st.cache_data.clear()
                 
-                try:
-                    conn.update(data=updated_df)
-                    st.cache_data.clear()
-                    st.balloons()
-                    st.success(f"✅ Success! {room_choice} has been reserved for {event_name}.")
+                details_payload = {
+                    "Role": user_role,
+                    "Name": name,
+                    "Department": dept,
+                    "WhatsApp": wa_num,
+                    "Event": event_name,
+                    "Room": room_choice,
+                    "Date": formatted_date,
+                    "Time_Slot": clean_slot_db_value,
+                    "Equipment_Details": equipment_summary
+                }
+
+                st.balloons()
+                st.success(f"✅ Success! {room_choice} has been reserved for {event_name}.")
+
+                email_sent = False
+
+                if notify_option == "Email Notification":
+                    with st.spinner("Notifying Admin via automated email..."):
+                        email_sent = send_admin_email(details_payload)
+                    if email_sent:
+                        st.info("✉️ Admin notified via automated email.")
+
+                elif notify_option == "WhatsApp Link":
+                    message_body = (
+                        f"📌 *NEW ROOM BOOKING NOTIFICATION*\n\n"
+                        f"👤 *Role:* {user_role}\n"
+                        f"👤 *Name:* {name}\n"
+                        f"🏢 *Dept:* {dept}\n"
+                        f"🏛️ *Room:* {room_choice}\n"
+                        f"📅 *Date:* {formatted_date}\n"
+                        f"⏰ *Time Slot:* {clean_slot_db_value}\n"
+                        f"📝 *Event:* {event_name}\n"
+                        f"🛠️ *Equipment:* {equipment_summary}\n"
+                        f"📞 *Contact:* {wa_num}"
+                    )
+                    encoded_msg = urllib.parse.quote(message_body)
+                    wa_url = f"https://wa.me/{ADMIN_WA_NUMBER}?text={encoded_msg}"
                     
-                    if notify_option == "WhatsApp Link":
-                        message_body = (
-                            f"📌 *NEW ROOM BOOKING NOTIFICATION*\n\n"
-                            f"👤 *Role:* {user_role}\n"
-                            f"👤 *Name:* {name}\n"
-                            f"🏢 *Dept:* {dept}\n"
-                            f"🏛️ *Room:* {room_choice}\n"
-                            f"📅 *Date:* {formatted_date}\n"
-                            f"⏰ *Time Slot:* {clean_slot_db_value}\n"
-                            f"📝 *Event:* {event_name}\n"
-                            f"🛠️ *Equipment:* {equipment_summary}\n"
-                            f"📞 *Contact:* {wa_num}"
-                        )
-                        encoded_msg = urllib.parse.quote(message_body)
-                        wa_url = f"https://wa.me/{ADMIN_WA_NUMBER}?text={encoded_msg}"
-                        st.link_button("📲 Click Here to Send WhatsApp Notification to Admin", wa_url)
-                except Exception as ex:
-                    st.error(f"Failed to write to Google Sheet. Please check credentials/permissions: {ex}")
+                    st.link_button("📲 Click Here to Send WhatsApp Notification to Admin", wa_url)
+
+                else:
+                    st.caption("No notification requested.")
 
         else:
             st.error("Please fill in all required fields.")
@@ -397,6 +473,7 @@ with tab2:
     """, unsafe_allow_html=True)
 
     col_ref, col_room_filter = st.columns([1, 2])
+    
     with col_ref:
         st.write("")
         st.write("")
@@ -411,7 +488,9 @@ with tab2:
     try:
         master_data = conn.read(ttl=60)
     except Exception:
-        master_data = pd.DataFrame(columns=DB_COLUMNS)
+        st.error("⚠️ Unable to connect to Google Sheets API.")
+        st.warning("Please check your database permissions or refresh.")
+        st.stop()
 
     with st.container(border=True):
         col_m, col_y = st.columns(2)
@@ -465,14 +544,21 @@ with tab2:
 
     if master_data is not None and not master_data.empty:
         st.divider()
+
         active_day = st.session_state.selected_calendar_day
         max_days = calendar.monthrange(selected_year, selected_month)[1]
         if active_day > max_days:
             active_day = max_days
 
         inspected_date_str = f"{active_day:02d}/{selected_month:02d}/{selected_year}"
-        details_df = month_data[month_data['Date'] == inspected_date_str] if 'month_data' in locals() else pd.DataFrame()
-        if selected_room_filter != "All Rooms" and not details_df.empty:
+
+        if selected_room_filter == "All Rooms":
+            st.write(f"### 🔍 All Reservations for **{inspected_date_str}**")
+        else:
+            st.write(f"### 🔍 Reservations for **{selected_room_filter}** on **{inspected_date_str}**")
+
+        details_df = month_data[month_data['Date'] == inspected_date_str]
+        if selected_room_filter != "All Rooms":
             details_df = details_df[details_df['Room'] == selected_room_filter]
 
         if not details_df.empty:
@@ -480,7 +566,10 @@ with tab2:
             clean_details = details_df[['Role', 'Name', 'Department', 'Room', 'Time_Slot', 'Event', 'Equipment_Details', 'WhatsApp']]
             st.dataframe(clean_details, hide_index=True, use_container_width=True)
         else:
-            st.info(f"No bookings registered for {inspected_date_str}.")
+            if selected_room_filter == "All Rooms":
+                st.info(f"No bookings registered for {inspected_date_str}.")
+            else:
+                st.info(f"No bookings registered for **{selected_room_filter}** on {inspected_date_str}.")
 
         try:
             target_password = st.secrets["admin_password"]
@@ -490,6 +579,7 @@ with tab2:
         if target_password and admin_password == target_password:
             st.divider()
             st.write("### 🔑 Admin: Cancel a Booking")
+            
             booking_options = []
             for master_idx, row in master_data.iterrows():
                 desc = f"{row['Name']} ({row['Role']}) — {row['Room']} on {row['Date']} ({row['Time_Slot']})"
@@ -506,6 +596,8 @@ with tab2:
                     st.cache_data.clear()
                     st.success("Booking deleted successfully.")
                     st.rerun()
+    else:
+        st.info("No bookings found in database.")
 
 # ==========================================
 # FOOTER
