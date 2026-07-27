@@ -317,24 +317,26 @@ with tab1:
         eq_col1, eq_col2, eq_col3 = st.columns(3)
         
         with eq_col3:
-            speaker_qty = st.number_input("Portable speaker quantity", min_value=0, max_value=10, value=0, step=1)
-            projector_qty = st.number_input("Projector quantity", min_value=0, max_value=5, value=0, step=1)
-            white_screen_qty = st.number_input("Portable white screen quantity", min_value=0, max_value=5, value=0, step=1)
-            visualiser_qty = st.number_input("Visualiser quantity", min_value=0, max_value=5, value=0, step=1)
-            green_board_qty = st.number_input("Portable green board quantity", min_value=0, max_value=10, value=0, step=1)
-            blue_board_qty = st.number_input("Portable blue board quantity", min_value=0, max_value=10, value=0, step=1)
-            mic_stand_qty = st.number_input("Mic stand quantity", min_value=0, max_value=20, value=0, step=1)
-            audio_cable_qty = st.number_input("Audio cable quantity", min_value=0, max_value=20, value=0, step=1)
+            speaker_qty = st.number_input("Portable speaker quantity", min_value=0, max_value=2, value=0, step=1)
+            projector_qty = st.number_input("Projector quantity", min_value=0, max_value=3, value=0, step=1)
+            extra_hdmi_qty = st.number_input("Extra HDMI quantity",min_value=0, max_value=2, value=0, step=1)
+            white_screen_qty = st.number_input("Portable white screen quantity", min_value=0, max_value=3, value=0, step=1)
+            visualiser_qty = st.number_input("Visualiser quantity", min_value=0, max_value=3, value=0, step=1)
+            
 
         with eq_col2:
-            whiteboard_qty = st.number_input("Portable whiteboard quantity", min_value=0, max_value=20, value=0, step=1)
-            flipchart_qty = st.number_input("Portable flip chart quantity", min_value=0, max_value=20, value=0, step=1)
-            mic_qty = st.number_input("Microphone quantity", min_value=0, max_value=10, value=0, step=1)
+            whiteboard_qty = st.number_input("Portable whiteboard quantity", min_value=0, max_value=3, value=0, step=1)
+            flipchart_qty = st.number_input("Portable flip chart quantity", min_value=0, max_value=5, value=0, step=1)
+            mic_qty = st.number_input("Microphone quantity", min_value=0, max_value=4, value=0, step=1)
+            mic_stand_qty = st.number_input("Mic stand quantity", min_value=0, max_value=3, value=0, step=1)
+            audio_cable_qty = st.number_input("Audio cable quantity", min_value=0, max_value=3, value=0, step=1)
             
         with eq_col1:
-            small_table_qty = st.number_input("Small foldable table quantity", min_value=0, max_value=50, value=0, step=1)
-            large_table_qty = st.number_input("Large foldable table quantity", min_value=0, max_value=50, value=0, step=1)
-            round_table_qty = st.number_input("Round table quantity", min_value=0, max_value=20, value=0, step=1)
+            small_table_qty = st.number_input("Small foldable table quantity", min_value=0, max_value=10, value=0, step=1)
+            large_table_qty = st.number_input("Large foldable table quantity", min_value=0, max_value=, 5value=0, step=1)
+            round_table_qty = st.number_input("Round table quantity", min_value=0, max_value=2, value=0, step=1)
+            green_board_qty = st.number_input("Portable green board quantity", min_value=0, max_value=2, value=0, step=1)
+            blue_board_qty = st.number_input("Portable blue board quantity", min_value=0, max_value=3, value=0, step=1)
             
         submit = st.form_submit_button("Confirm Booking")
 
