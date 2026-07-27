@@ -333,7 +333,7 @@ with tab1:
             
         with eq_col1:
             small_table_qty = st.number_input("Small foldable table quantity", min_value=0, max_value=10, value=0, step=1)
-            large_table_qty = st.number_input("Large foldable table quantity", min_value=0, max_value=, 5value=0, step=1)
+            large_table_qty = st.number_input("Large foldable table quantity", min_value=0, max_value=5, value=0, step=1)
             round_table_qty = st.number_input("Round table quantity", min_value=0, max_value=2, value=0, step=1)
             green_board_qty = st.number_input("Portable green board quantity", min_value=0, max_value=2, value=0, step=1)
             blue_board_qty = st.number_input("Portable blue board quantity", min_value=0, max_value=3, value=0, step=1)
