@@ -312,7 +312,7 @@ with tab1:
             slot_choice = st.selectbox("Time / Period Duration", list(time_slots.keys()))
 
         st.markdown("---")
-        st.subheader("🛠️ Equipment Needed (Set quantities to 0 if not needed)")
+        st.subheader("🛠️ Equipment Needed: ")
         
         eq_col1, eq_col2, eq_col3 = st.columns(3)
         
