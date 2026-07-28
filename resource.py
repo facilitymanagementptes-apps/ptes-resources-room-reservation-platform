@@ -337,7 +337,7 @@ with tab1:
             green_board_qty = st.number_input("Portable green board quantity", min_value=0, max_value=1, value=0, step=1)
             blue_board_qty = st.number_input("Portable blue board quantity", min_value=0, max_value=1, value=0, step=1)
             
-        submit = st.form_submit_button("Confirm Booking")
+        submit = st.form_submit_button("Click to Confirm Reservation")
 
     if submit:
         if name and event_name and wa_num:
@@ -388,7 +388,7 @@ with tab1:
             ]
 
             if not clash.empty:
-                st.error(f"❌ CLASH DETECTED: {room_choice} is unavailable on {formatted_date} due to a conflicting reservation.")
+                st.error(f"❌ CLASH DETECTED due to a conflicting reservation, Your {room_choice} is {formatted_date} NOT AVAILABLE.")
             else:
                 new_entry = pd.DataFrame([{
                     "Role": user_role,
@@ -596,7 +596,7 @@ with tab2:
 # ==========================================
 st.markdown("""
     <div class="footer-container">
-        <p style="font-size: 18px; font-weight: bold;">✨ PTES Multi Resource Rooms Booking Portal ✨</p>
+        <p style="font-size: 18px; font-weight: bold;">✨ PTES Facilities Management Multi Resource Rooms Reservation Portal ✨</p>
         <p style="font-size: 14px; font-weight: 600;">Portal Developer : Miss Hajah Nurul Haziqah HN, IT Service Section PTES.</p>
     </div>
 """, unsafe_allow_html=True)
