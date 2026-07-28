@@ -174,7 +174,7 @@ with st.sidebar:
 st.markdown("""
     <div class="header-container">
         <h1>PUSAT TINGKATAN ENAM SENGKURONG</h1>
-        <p style="font-size: 20px; font-weight: bold;">✨ Digital Multi-Resource Reservation Room ✨</p>
+        <p style="font-size: 20px; font-weight: bold;">✨ Digital Facilities Management Reservation✨</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -283,7 +283,7 @@ def send_admin_email(booking_details):
 # ==========================================
 # TAB NAVIGATION
 # ==========================================
-tab1, tab2 = st.tabs(["📝 Make a Booking", "📅 View Schedule"])
+tab1, tab2 = st.tabs(["📝 Make a Reservation", "📅 View Reserved Schedule"])
 
 # ==========================================
 # TAB 1: MAKE A BOOKING
