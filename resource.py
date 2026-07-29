@@ -192,7 +192,7 @@ room_list = [
     "Multimedia Theatre (MMT) Level 2 [Cap: 288]",
     "Lecture Theatre 1 (LT1) Level 2 [Cap: 102]",
     "Lecture Theatre 2 (LT2) Level 3 [Cap: 102]",
-    "PTES Conference Room Level 2 [Cap: 30]"
+    "Conference Room Level 2 [Cap: 30]"
 ]
 
 # Academic Department List (20 Subjects)
@@ -256,7 +256,7 @@ def send_admin_email(booking_details):
                     <li><b>WhatsApp Contact:</b> {booking_details['WhatsApp']}</li>
                 </ul>
                 <hr>
-                <p><i>This is an automated notification from PTES Booking Portal.</i></p>
+                <p><i>This is an automated notification from PTES Portal.</i></p>
             </body>
         </html>
         """
@@ -460,7 +460,7 @@ with tab1:
 with tab2:
     st.markdown("""
         <div class="tab2-banner">
-            <h3>📅 Monthly Interactive Schedule Calendar</h3>
+            <h3>📅 Interactive Schedule Calendar</h3>
         </div>
     """, unsafe_allow_html=True)
 
